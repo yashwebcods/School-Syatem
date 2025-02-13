@@ -92,6 +92,9 @@ module.exports.ChangePassword = async (req, res) => {
 
                     if (req.body.newPassword == req.body.confirmPassword) {
 
+
+
+                        
                         req.body.newPassword = bcrypt.hash(req.body.confirmPassword, 10)
                         let newData = await AdminModel.findByIdAndUpdate(req.user._id, req.body)
                         if (newData) {
