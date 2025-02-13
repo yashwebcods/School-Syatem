@@ -1,6 +1,9 @@
 const AdminModel = require('../../../model/AdminModel')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const nodemailer = require('nodemailer')
+
+// yvjb qvvv ylug csrx
 
 module.exports.register = async (req, res) => {
     try {
@@ -92,13 +95,10 @@ module.exports.ChangePassword = async (req, res) => {
 
                     if (req.body.newPassword == req.body.confirmPassword) {
 
-
-
-                        
                         req.body.newPassword = bcrypt.hash(req.body.confirmPassword, 10)
                         let newData = await AdminModel.findByIdAndUpdate(req.user._id, req.body)
                         if (newData) {
-                            
+
                             let data = await AdminModel.findById(req.user._id)
                             return res.status(200).json({ mes: "password change success", Data: data })
                         } else {
@@ -119,6 +119,39 @@ module.exports.ChangePassword = async (req, res) => {
         }
 
 
+    } catch (err) {
+        return res.status(400).json({ mes: "Somthing Wrong" })
+
+    }
+}
+
+module.exports.forgetPassword = async (req, res) => {
+    try {
+        let isAdmin = AdminModel.findOne({ email: req.body })
+        if (isAdmin) {
+            const transporter = nodemailer.createTransport({
+                host: "smtp.ethereal.email",
+                port: 587,
+                secure: false,
+                auth: {
+                    user: "ysiddhapura6@gmail.com",
+                    pass: "yvjbqvvvylugcsrx",
+                },tls:{
+                    rejectUnauthorized:false
+                }
+            });
+
+            const info = await transporter.sendMail({
+                from: `${req.body.email}`, // sender address
+                to: "ysiddhapura6@gmail.com", // list of receivers
+                subject: "Hello ✔", // Subject line
+                text: "Hello world?", // plain text body
+                html: "<b>Hello world?</b>", // html body
+            });
+        } else {
+            return res.status(400).json({ mes: "invalid email" })
+
+        }
     } catch (err) {
         return res.status(400).json({ mes: "Somthing Wrong" })
 

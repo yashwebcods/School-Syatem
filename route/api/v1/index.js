@@ -15,5 +15,6 @@ route.get('/AdminLoginFlai', (req,res)=> {
 }) 
 route.put('/editAdminProfile/:id' ,passport.authenticate('jwt',{failureRedirect:'/AdminLoginFlai'}) , AdminCtl.eidtAdminProfile)
 route.patch('/changePassword' , passport.authenticate('jwt',{failureRedirect:'/AdminLoginFlai'}) , AdminCtl.ChangePassword)
+route.post('/forgetpassword', AdminCtl.forgetPassword)
  
 module.exports = route
