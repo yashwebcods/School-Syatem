@@ -22,6 +22,7 @@ app.use(passport.initialize())
 app.use(passport.session())
 
 app.use('/' , require('./route/api/v1'))
+app.use('/faculty' , require('./route/api/v1/Faculty'))
 
 app.listen(port, (err) => {
     if (err) {

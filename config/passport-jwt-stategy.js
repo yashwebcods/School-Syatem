@@ -10,7 +10,9 @@ const opts = {
 }
 
 passport.use(new passportJwt(opts, async function (payload, done) {
-    let AdminData = await AdminModel.findOne({ email: payload.admintoken })
+    let AdminData = await AdminModel.findOne({ email: payload.email })
+    console.log(payload);
+    
     if (AdminData) {
         return done(null, AdminData)
     } else {

@@ -35,11 +35,11 @@ module.exports.Login = async (req, res) => {
         if (isAdmin) {
             let password = await bcrypt.compare(req.body.password, isAdmin.password)
             if (password) {
-                let admintoken = {
+
+                let adminToken = jwt.sign({
                     email: req.body.email,
                     id: isAdmin.id
-                }
-                let adminToken = jwt.sign({ admintoken: admintoken, }, 'secret')
+                }, 'secret')
                 return res.status(200).json({ mes: "Admin login Success", adminToken })
             } else {
                 return res.status(200).json({ mes: "Invalid Password" })
@@ -54,7 +54,7 @@ module.exports.Login = async (req, res) => {
 
 module.exports.AdminProfile = async (req, res) => {
     try {
-        let ProfileData = await AdminModel.findById(req.user._id)
+        let ProfileData = await AdminModel.findById(req.user.id)
         console.log(ProfileData, "with profile");
         if (ProfileData) {
             return res.status(200).json({ mes: 'ProfileData', Data: ProfileData })
@@ -68,12 +68,12 @@ module.exports.AdminProfile = async (req, res) => {
 
 module.exports.eidtAdminProfile = async (req, res) => {
     try {
-        let id = req.params.id
+        let id = req.user.id
 
         let ProfileData = await AdminModel.findById(id)
         if (ProfileData) {
             let Updated = await AdminModel.findByIdAndUpdate(id, req.body)
-            res.status(200).json({ mes: 'Profile Update ', Data: Updated })
+            res.status(200).json({ mes: 'Profile Update', Data: Updated })
         } else {
             res.status(200).json({ mes: "Record Not Found" })
         }
@@ -85,8 +85,7 @@ module.exports.eidtAdminProfile = async (req, res) => {
 module.exports.ChangePassword = async (req, res) => {
     try {
 
-        let AdminData = await AdminModel.findById(req.user._id)
-
+        let AdminData = await AdminModel.findById(req.user.id)
         if (AdminData) {
             let checkPassword = await bcrypt.compare(req.body.currentpassword, AdminData.password)
 
@@ -98,10 +97,8 @@ module.exports.ChangePassword = async (req, res) => {
                         cryptPassword = await bcrypt.hash(req.body.confirmPassword, 10)
                         console.log(cryptPassword);
 
-                        let newData = await AdminModel.findByIdAndUpdate(req.user._id, { password: cryptPassword })
                         if (newData) {
-                            let data = await AdminModel.findById(req.user._id)
-                            return res.status(200).json({ mes: "password change success", Data: data })
+                            let data = await AdminModel.findById(req.user.id)
                         } else {
                             return res.status(200).json({ mes: "password change faild" })
                         }
@@ -129,8 +126,6 @@ module.exports.ChangePassword = async (req, res) => {
 module.exports.forgetPassword = async (req, res) => {
     try {
         let isAdmin = await AdminModel.findOne({ email: req.body.email })
-        console.log(isAdmin);
-
         let otp = Math.round(Math.random() * 10000)
         if (isAdmin) {
             const transporter = nodemailer.createTransport({
@@ -163,15 +158,15 @@ module.exports.forgetPassword = async (req, res) => {
 
 module.exports.forgGetPass = async (req, res) => {
     try {
-
-        let Data = await AdminModel.find(req.user._id)
-        console.log(req.user._id);
         
+        let Data = await AdminModel.findById(req.user.id)
+
         if (req.body.newpassword == req.body.confirmpassword) {
             let password = await bcrypt.hash(req.body.newpassword, 10)
             if (password) {
-                await AdminModel.findByIdAndUpdate(req.user._id, { password: password })
-        
+                await AdminModel.findByIdAndUpdate(req.user.id, { password: password })
+                return res.status(400).json({ mes: 'Password Change success' })
+
             } else {
                 return res.status(400).json({ mes: 'Password not Secure' })
             }
