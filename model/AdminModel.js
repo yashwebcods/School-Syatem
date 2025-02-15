@@ -1,11 +1,11 @@
 const mongoose = require('mongoose')
 
 const AdminSchema = mongoose.Schema({
-    adminNmae:{
+    adminName:{
         type:String,
         required:true
     },
-    a   :{
+    email:{
         type:String,
         required:true
     },

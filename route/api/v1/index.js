@@ -13,8 +13,8 @@ route.get('/AdminLoginFlai', (req,res)=> {
         return res.status(200).json({mes:'Something Wrong'})
     }
 }) 
-route.put('/editAdminProfile/:id' ,passport.authenticate('jwt',{failureRedirect:'/AdminLoginFlai'}) , AdminCtl.eidtAdminProfile)
+route.patch('/editAdminProfile/:id' ,passport.authenticate('jwt',{failureRedirect:'/AdminLoginFlai'}) , AdminCtl.eidtAdminProfile)
 route.patch('/changePassword' , passport.authenticate('jwt',{failureRedirect:'/AdminLoginFlai'}) , AdminCtl.ChangePassword)
-route.post('/forgetpassword', AdminCtl.forgetPassword)
- 
+route.post('/forgetpassword' , passport.authenticate('jwt',{failureRedirect:'/AdminLoginFlai'}) , AdminCtl.forgetPassword)
+route.patch('/changeOldPassword' , AdminCtl.forgGetPass) 
 module.exports = route

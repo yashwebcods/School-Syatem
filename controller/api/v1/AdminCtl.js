@@ -3,42 +3,43 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
 
-// yvjb qvvv ylug csrx
 
 module.exports.register = async (req, res) => {
     try {
-        let isExist = await AdminModel.findOne({ email: req.body.email })
-        if (!isExist) {
-            if (req.body.confirmPassword == req.body.password) {
-                req.body.password = await bcrypt.hash(req.body.password, 10)
-                let isAdded = await AdminModel.create(req.body)
-                if (isAdded) {
-                    return res.status(200).json({ mes: "Admin Added" })
+        let isExist = await AdminModel.findOne({ email: req.body.email });
 
+        if (!isExist) {
+            if (req.body.confirmPassword === req.body.password) {
+                req.body.password = await bcrypt.hash(req.body.password, 10);
+
+                if (req.body.password) {
+                    let isAdded = await AdminModel.create(req.body);
+                    return res.status(201).json({ mes: "Admin Added", Data: isAdded });
                 } else {
-                    return res.status(200).json({ mes: "Admin Not Add" })
+                    return res.status(500).json({ mes: "Admin Not Added" });
                 }
             } else {
-                return res.status(200).json({ mes: "Password is wrong" })
+                return res.status(400).json({ mes: "Password does not match" });
             }
-        }
-        else {
-            return res.status(200).json({ mes: "Email already exist" })
+        } else {
+            return res.status(409).json({ mes: "Email already exists" });
         }
     } catch (err) {
-        return res.status(400).json({ mes: "Somthing Wrong" })
+        return res.status(500).json({ mes: "Something went wrong", error: err.message });
     }
-}
+};
 
 module.exports.Login = async (req, res) => {
     try {
         let isAdmin = await AdminModel.findOne({ email: req.body.email })
         if (isAdmin) {
-            let password = bcrypt.compare(req.body.password, isAdmin.password)
+            let password = await bcrypt.compare(req.body.password, isAdmin.password)
             if (password) {
-
-
-                let adminToken = jwt.sign({ admintoken: isAdmin }, 'secret')
+                let admintoken = {
+                    email: req.body.email,
+                    id: isAdmin.id
+                }
+                let adminToken = jwt.sign({ admintoken: admintoken, }, 'secret')
                 return res.status(200).json({ mes: "Admin login Success", adminToken })
             } else {
                 return res.status(200).json({ mes: "Invalid Password" })
@@ -67,14 +68,12 @@ module.exports.AdminProfile = async (req, res) => {
 
 module.exports.eidtAdminProfile = async (req, res) => {
     try {
-        console.log(req.body);
         let id = req.params.id
 
         let ProfileData = await AdminModel.findById(id)
         if (ProfileData) {
             let Updated = await AdminModel.findByIdAndUpdate(id, req.body)
-            let isUpdated = await AdminModel.findById(id)
-            res.status(200).json({ mes: 'Profile Update ', Data: isUpdated })
+            res.status(200).json({ mes: 'Profile Update ', Data: Updated })
         } else {
             res.status(200).json({ mes: "Record Not Found" })
         }
@@ -87,18 +86,20 @@ module.exports.ChangePassword = async (req, res) => {
     try {
 
         let AdminData = await AdminModel.findById(req.user._id)
-        console.log(AdminData);
+
         if (AdminData) {
             let checkPassword = await bcrypt.compare(req.body.currentpassword, AdminData.password)
+
             if (checkPassword) {
                 if (req.body.currentpassword != req.body.newPassword) {
 
                     if (req.body.newPassword == req.body.confirmPassword) {
 
-                        req.body.newPassword = bcrypt.hash(req.body.confirmPassword, 10)
-                        let newData = await AdminModel.findByIdAndUpdate(req.user._id, req.body)
-                        if (newData) {
+                        cryptPassword = await bcrypt.hash(req.body.confirmPassword, 10)
+                        console.log(cryptPassword);
 
+                        let newData = await AdminModel.findByIdAndUpdate(req.user._id, { password: cryptPassword })
+                        if (newData) {
                             let data = await AdminModel.findById(req.user._id)
                             return res.status(200).json({ mes: "password change success", Data: data })
                         } else {
@@ -127,26 +128,29 @@ module.exports.ChangePassword = async (req, res) => {
 
 module.exports.forgetPassword = async (req, res) => {
     try {
-        let isAdmin = AdminModel.findOne({ email: req.body })
+        let isAdmin = await AdminModel.findOne({ email: req.body.email })
+        console.log(isAdmin);
+
+        let otp = Math.round(Math.random() * 10000)
         if (isAdmin) {
             const transporter = nodemailer.createTransport({
-                host: "smtp.ethereal.email",
+                host: "smtp.gmail.com",
                 port: 587,
                 secure: false,
                 auth: {
                     user: "ysiddhapura6@gmail.com",
                     pass: "yvjbqvvvylugcsrx",
-                },tls:{
-                    rejectUnauthorized:false
+                }, tls: {
+                    rejectUnauthorized: false
                 }
             });
 
             const info = await transporter.sendMail({
-                from: `${req.body.email}`, // sender address
-                to: "ysiddhapura6@gmail.com", // list of receivers
+                from: "ysiddhapura6@gmail.com", // list of receivers
+                to: req.body.email, // sender address
                 subject: "Hello ✔", // Subject line
-                text: "Hello world?", // plain text body
-                html: "<b>Hello world?</b>", // html body
+                text: `Your Otp`, // plain text body
+                html: `${otp}`, // html body
             });
         } else {
             return res.status(400).json({ mes: "invalid email" })
@@ -154,6 +158,27 @@ module.exports.forgetPassword = async (req, res) => {
         }
     } catch (err) {
         return res.status(400).json({ mes: "Somthing Wrong" })
+    }
+}
 
+module.exports.forgGetPass = async (req, res) => {
+    try {
+
+        let Data = await AdminModel.find(req.user._id)
+        console.log(req.user._id);
+        
+        if (req.body.newpassword == req.body.confirmpassword) {
+            let password = await bcrypt.hash(req.body.newpassword, 10)
+            if (password) {
+                await AdminModel.findByIdAndUpdate(req.user._id, { password: password })
+        
+            } else {
+                return res.status(400).json({ mes: 'Password not Secure' })
+            }
+        } else {
+            return res.status(400).json({ mes: "New Password And Confirm Password Must Be Same" })
+        }
+    } catch (err) {
+        return res.status(400).json({ mes: "Somthing Wrong" })
     }
 }

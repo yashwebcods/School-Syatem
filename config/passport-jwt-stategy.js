@@ -10,7 +10,7 @@ const opts = {
 }
 
 passport.use(new passportJwt(opts, async function (payload, done) {
-    let AdminData = await AdminModel.findOne({ email: payload.admintoken.email })
+    let AdminData = await AdminModel.findOne({ email: payload.admintoken })
     if (AdminData) {
         return done(null, AdminData)
     } else {
@@ -23,7 +23,7 @@ passport.serializeUser(function(user,done){
 })
 
 passport.deserializeUser(async function(id,done){
-    let isAdmin = await AdminData.findById(id)
+    let isAdmin = await AdminModel.findById(id)
     if(isAdmin){
         return done(null,isAdmin)
     }else{
